@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import path from 'node:path';
 
 export const MAX_SIZE = 100_000_000;
-export const CHUNK_SIZE = 4 * 1024 * 1024;
+export const CHUNK_SIZE = 2 * 1024 * 1024;
 export class AppError extends Error {
   constructor(status, message) { super(message); this.status = status; }
 }

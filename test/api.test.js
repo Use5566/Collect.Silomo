@@ -66,6 +66,27 @@ test('多人同時繳交分配不同紀錄列',async t=>{
 test('登入節流',async t=>{
   const a=await setup(t);let r;for(let i=0;i<16;i++)r=await a.request('/api/login',{method:'POST',body:{password:'wrong'}});assert.equal(r.status,429);
 });
+
+test('同一學校 IP 的 32 次正確登入皆成功且每次核對密碼',async t=>{
+  const a=await setup(t);let reads=0;const password=a.google.password.bind(a.google);
+  a.google.password=async()=>{reads++;return password();};
+  const results=await Promise.all(Array.from({length:32},()=>a.request('/api/login',{method:'POST',body:{password:'1234'}})));
+  assert(results.every(r=>r.status===200));assert.equal(reads,32);
+});
+
+test('16 組分塊超過處理上限會排隊完成，失敗後名額亦釋放',async t=>{
+  const a=await setup(t);let active=0,peak=0;
+  const chunk=a.google.chunk.bind(a.google);
+  a.google.chunk=async(...args)=>{active++;peak=Math.max(peak,active);try{await new Promise(r=>setTimeout(r,30));return await chunk(...args);}finally{active--;}};
+  const jobs=await Promise.all(Array.from({length:16},async()=>{
+    const login=await a.request('/api/login',{method:'POST',body:{password:'1234'}});
+    return a.init(a.metadata(),login.data.token);
+  }));
+  const results=await Promise.all(jobs.map(j=>a.chunk(j.data)));
+  assert(results.every(r=>r.status===200 && r.data.state==='complete'));assert.equal(peak,4);assert.equal(a.google.records.size,16);
+  const bad=(await a.init()).data;assert.equal((await a.chunk(bad,Buffer.alloc(png.length))).status,400);
+  assert.equal(a.uploads.active,0);assert.equal(a.uploads.waiting.length,0);
+});
 test('無本機狀態模式可在服務重啟後續傳',async t=>{
   const dir=await mkdtemp(path.resolve('work','collect-stateless-')),google=new MockGoogle('1234');
   const config=configFromEnv({DATA_DIR:dir,SESSION_SECRET:'a'.repeat(64),MODE:'mock'});config.stateless=true;

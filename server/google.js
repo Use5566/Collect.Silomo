@@ -30,6 +30,7 @@ export class Google {
   async json(url, options = {}) {
     const response = await this.request(url,options);
     if (!response.ok) {
+      await response.body?.cancel();
       // Only upstream status is retained. Never log tokens, passwords or private response bodies.
       throw new AppError(503,`Google 服務暫時無法完成操作（${response.status}），請稍後重試。`);
     }
@@ -110,6 +111,7 @@ export class Google {
   async parseUpload(response, job) {
     if (response.status === 308) {
       const range = response.headers.get('range');
+      await response.body?.cancel();
       return { offset:range ? Number(range.split('-').pop())+1 : 0, complete:false };
     }
     if (response.ok) {

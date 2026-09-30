@@ -5,14 +5,39 @@ const state={token:null,mode:'google',classroom:null,seats:new Set(),file:null,j
 const segments=text=>Array.from(new Intl.Segmenter('zh-Hant',{granularity:'grapheme'}).segment(text));
 function show(panel){for(const name of ['login','upload','success']) $(name+'-panel').hidden=name!==panel;window.scrollTo({top:0,behavior:'smooth'});}
 function setMode(mode){state.mode=mode;$('mode-banner').hidden=mode!=='mock';}
-async function api(route,{method='GET',body,token=state.token,headers={}}={}){
+async function apiOnce(route,{method='GET',body,token=state.token,headers={}}={}){
   const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),115000);
   try{
     const response=await fetch(apiBase+route,{method,headers:{...(token?{Authorization:`Bearer ${token}`} : {}),...(body && !(body instanceof Blob)?{'Content-Type':'application/json'}:{}),...headers},body:body instanceof Blob?body:body?JSON.stringify(body):undefined,signal:controller.signal,cache:'no-store'});
-    const data=await response.json();
+    const data=await response.json().catch(()=>{const error=new Error('服務啟動中，正在等待連線。');error.status=503;throw error;});
     if(!response.ok){const error=new Error(data.error || '操作失敗，請稍後重試。');error.status=response.status;throw error;}
     return data;
   }catch(e){if(e instanceof TypeError || e.name==='AbortError')throw new Error('連線暫時中斷或服務啟動中，請稍後重試。');throw e;}finally{clearTimeout(timer);}
+}
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+async function api(route,options={}){
+  const deadline=Date.now()+300000;let lastError,needsSync=false;
+  for(let attempt=0;attempt<10 && Date.now()<deadline;attempt++){
+    try{
+      if(needsSync){
+        const latest=await apiOnce(route,{token:options.token});
+        options={...options,token:latest.uploadToken||options.token};
+        if(latest.state==='complete'||latest.offset!==Number(options.headers['X-Chunk-Offset']))return latest;
+        needsSync=false;
+      }
+      return await apiOnce(route,options);
+    }catch(error){
+      lastError=error;
+      if(error.status && ![408,409,429,500,502,503,504].includes(error.status))throw error;
+      if(options.method==='PUT')needsSync=true;
+      const delay=Math.min(15000,2000*2**Math.min(attempt,3))+Math.random()*1500;
+      const message='正在等待服務或排隊，請保持頁面開啟，系統會自動繼續。';
+      if(route==='/api/login')$('login-button').textContent=message;
+      else if(route.startsWith('/api/uploads')){$('progress-panel').hidden=false;$('progress-title').textContent=message;}
+      await sleep(delay);
+    }
+  }
+  throw lastError||new Error('等待時間較長，請稍後按繼續上傳。');
 }
 function renderSeats(){
   for(const button of $('seats').children){const selected=state.seats.has(Number(button.dataset.seat));button.classList.toggle('selected',selected);button.setAttribute('aria-pressed',String(selected));button.setAttribute('aria-disabled',String(!selected&&state.seats.size>=5));}
@@ -40,6 +65,7 @@ function progress(job){const percent=Math.floor(job.offset/job.size*100);$('prog
 function success(){
   $('receipt-group').textContent=`5年${state.payload.classroom}班 · ${[...state.payload.seats].sort((a,b)=>a-b).map(n=>String(n).padStart(2,'0')).join('、')}號`;
   $('receipt-topic').textContent=state.payload.topic;$('receipt-file').textContent=state.job.name;
+  state.file=null;$('file').value='';state.job.uploadToken=null;
   $('success-title').textContent=state.mode==='mock'?'模擬上傳完成！':'作品已繳交！';
   $('success-description').textContent=state.mode==='mock'?'這是本機測試，檔案未送至 Google Drive。':'檔案已存入老師的雲端硬碟，並完成繳交紀錄。';
   show('success');$('success-title').tabIndex=-1;$('success-title').focus();
