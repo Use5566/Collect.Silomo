@@ -1,0 +1,13 @@
+{
+  "name": "collect-silomo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server/index.js",
+    "dev": "node --env-file-if-exists=.env server/index.js",
+    "test": "node --test --test-concurrency=1 test/*.test.js",
+    "check": "node --check server/index.js && node --check server/google.js && node --check server/core.js && node --check public/app.js"
+  }
+}

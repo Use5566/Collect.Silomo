@@ -1,0 +1,13 @@
+node_modules/
+.env
+.env.*
+!.env.example
+data/
+work/
+coverage/
+*service-account*.json
+*credentials*.json
+*.pem
+*.key
+sci-video-*.json
+!package-lock.json

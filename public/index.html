@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#2563eb">
+  <title>Collect.Silomo｜科學實驗影音上傳</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./config.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="brand"><a href="./" aria-label="Collect.Silomo 首頁"><span class="brand-mark" aria-hidden="true">C<span>·</span></span>Collect<span class="brand-light">.Silomo</span></a></header>
+    <div id="mode-banner" class="notice" hidden>本機測試模式 · 上傳不會送出至 Google Drive</div>
+    <section class="card" id="login-panel" aria-labelledby="login-title">
+      <div class="intro"><h1 id="login-title">科學實驗影音上傳</h1></div>
+      <div class="steps" aria-label="繳交流程"><span class="current"><b>1</b> 輸入密碼</span><i></i><span><b>2</b> 填寫資料</span><i></i><span><b>3</b> 上傳作品</span></div>
+      <form id="login-form">
+        <label for="password">課堂密碼</label><p class="hint">請輸入老師提供的密碼，即可開始繳交。</p>
+        <div class="password-wrap"><input id="password" type="password" autocomplete="off" maxlength="256" required placeholder="輸入課堂密碼"><button id="show-password" type="button" class="text-button" aria-pressed="false">顯示</button></div>
+        <p id="login-error" class="error" role="alert"></p>
+        <button class="primary" id="login-button" type="submit">進入上傳頁面 <span aria-hidden="true">→</span></button>
+      </form>
+    </section>
+
+    <section class="card" id="upload-panel" hidden aria-labelledby="upload-title">
+      <div class="page-heading"><div><h1 id="upload-title">科學實驗影音上傳</h1></div><button id="logout" type="button" class="text-button">離開</button></div>
+      <p class="subtitle">選擇組員、填寫主題，再上傳一份作品。</p>
+      <form id="upload-form">
+        <fieldset id="details">
+          <div class="field"><span id="grade-label" class="label">選擇年級</span><div class="choices grades" role="group" aria-labelledby="grade-label"><button type="button" class="choice selected" aria-pressed="true">5年級 <span aria-hidden="true">✓</span></button></div></div>
+          <div class="field"><span id="class-label" class="label">選擇班級 <span class="required">必填</span></span><div id="classes" class="choices classes" role="group" aria-labelledby="class-label"></div></div>
+          <div class="field"><div class="label-row"><span id="seat-label" class="label">選擇座號 <span class="required">必填</span></span><span id="seat-count" class="counter" aria-live="polite">已選 0 / 5 位</span></div><p class="hint">點選本次作品的組員，最多可選5位。</p><div id="seats" class="choices seats" role="group" aria-labelledby="seat-label"></div><p id="seat-message" class="hint" role="status"></p></div>
+          <div class="field"><div class="label-row"><label for="topic">實驗主題 <span class="required">必填</span></label><span id="topic-count" class="counter">0 / 10 字</span></div><input id="topic" required placeholder="例如：光的折射" aria-describedby="topic-count" autocomplete="off"></div>
+          <div class="field"><label for="description">說明 <span class="optional">選填</span></label><textarea id="description" maxlength="5000" rows="3" placeholder="可以寫下實驗發現，或想告訴老師的事。"></textarea></div>
+          <div class="field"><label for="file">上傳作品 <span class="required">必填</span></label><p class="hint" id="file-hint">每次1個照片或影片，最大100MB。支援 iPad 的 HEIC、MOV 格式。</p><div class="file-box"><span class="upload-symbol" aria-hidden="true">↑</span><strong>選擇你的照片或影片</strong><input id="file" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.heif,.mp4,.mov,.m4v,.webm,image/*,video/*" required aria-describedby="file-hint"><span id="file-summary" class="hint">也可以從照片圖庫或相機選取</span></div></div>
+        </fieldset>
+        <div id="progress-panel" class="progress-panel" hidden aria-live="polite"><div class="label-row"><strong id="progress-title">準備上傳…</strong><span id="progress-percent">0%</span></div><progress id="progress" max="100" value="0">0%</progress><p class="hint">上傳期間請保持此頁面開啟，並避免 iPad 進入休眠。</p></div>
+        <p id="upload-error" class="error" role="alert"></p>
+        <button type="submit" id="upload-button" class="primary"><span aria-hidden="true">↑</span> 開始上傳到雲端</button>
+        <button type="button" id="retry-button" class="primary" hidden>重試並繼續上傳</button>
+        <button type="button" id="reset-button" class="secondary" hidden>重新填寫</button>
+      </form>
+      <p class="privacy-note">請確認班級與組員，再送出作品。</p>
+    </section>
+
+    <section class="card success-card" id="success-panel" hidden aria-labelledby="success-title"><div class="success-icon" aria-hidden="true">✓</div><h1 id="success-title">作品已繳交！</h1><p id="success-description">檔案已存入老師的雲端硬碟，並完成繳交紀錄。</p><dl class="receipt"><div><dt>班級與組員</dt><dd id="receipt-group"></dd></div><div><dt>實驗主題</dt><dd id="receipt-topic"></dd></div><div><dt>檔案名稱</dt><dd id="receipt-file"></dd></div></dl><button id="another" class="primary" type="button">再上傳一份作品</button><button id="finish" class="text-button" type="button">完成並離開</button></section>
+  </main>
+</body>
+</html>
